@@ -47,7 +47,10 @@ def chat_prompt(tok, user: str) -> str:
 def to_label(pred: str, labels: list[str]) -> str | None:
     """Exact label if the model produced one; otherwise None (strict scoring, no fuzzy credit)."""
     p = pred.strip().split("\n")[0].strip().strip("`'\" .").lower()
-    return p if p in labels else None
+    # Case-insensitive match that returns the CANONICAL label: one Banking77 label is
+    # 'Refund_not_showing_up' (capital R), so comparing a lowercased prediction to the raw list never matched it.
+    canon = {l.lower(): l for l in labels}
+    return canon.get(p)
 
 
 def nearest_label(pred: str, labels: list[str]) -> str:

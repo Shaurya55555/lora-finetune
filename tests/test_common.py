@@ -13,6 +13,13 @@ def test_to_label_is_strict():
     assert common.to_label("my card has not arrived", LABELS) is None
 
 
+def test_label_with_capital_letter_matches_canonical_form():
+    # Banking77 has a label spelled 'Refund_not_showing_up' (capital R)
+    labels = ["card_arrival", "Refund_not_showing_up"]
+    assert common.to_label("Refund_not_showing_up", labels) == "Refund_not_showing_up"
+    assert common.to_label("refund_not_showing_up", labels) == "Refund_not_showing_up"
+
+
 def test_prompted_message_lists_labels_and_shots():
     m = common.user_msg_prompted("where is my card", LABELS, [("hi", "card_arrival")])
     assert "lost_or_stolen_card" in m and "Message: hi\nIntent: card_arrival" in m

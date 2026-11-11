@@ -2,13 +2,13 @@
 import difflib
 import random
 
-from datasets import load_dataset
-
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"
 SYSTEM = "You are a banking support classifier. Reply with exactly one intent label and nothing else."
 
 
 def load_banking77():
+    from datasets import load_dataset  # lazy: keeps the pure helpers importable without the heavy deps
+
     ds = load_dataset("PolyAI/banking77")
     names = ds["train"].features["label"].names
     return ds, names

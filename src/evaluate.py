@@ -14,20 +14,10 @@ from pathlib import Path
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from common import (MODEL, chat_prompt, load_banking77, stratified_sample, to_label, user_msg_finetuned,
+from common import (MODEL, chat_prompt, load_banking77, macro_f1, stratified_sample, to_label, user_msg_finetuned,
                     user_msg_prompted)
 
 ROOT = Path(__file__).resolve().parents[1]
-
-
-def macro_f1(gold, pred, labels):
-    f1s = []
-    for l in labels:
-        tp = sum(g == l and p == l for g, p in zip(gold, pred))
-        fp = sum(g != l and p == l for g, p in zip(gold, pred))
-        fn = sum(g == l and p != l for g, p in zip(gold, pred))
-        f1s.append(0.0 if tp == 0 else 2 * tp / (2 * tp + fp + fn))
-    return sum(f1s) / len(f1s)
 
 
 def main():
@@ -37,6 +27,11 @@ def main():
     ap.add_argument("--n-per-class", type=int, default=10)
     ap.add_argument("--bs", type=int, default=16)
     a = ap.parse_args()
+
+    if not torch.cuda.is_available():
+        raise SystemExit("No CUDA GPU found. Run this in Colab (T4 runtime) or on a machine with a CUDA GPU.")
+    if a.mode == "lora" and not (Path(a.adapter) / "adapter_config.json").exists():
+        raise SystemExit(f"No LoRA adapter at {a.adapter}. Run src/train.py first (the adapter is not in this repo).")
 
     ds, names = load_banking77()
     test = stratified_sample(ds["test"], a.n_per_class, seed=1)

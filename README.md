@@ -35,7 +35,19 @@ Locally (needs a CUDA GPU) or in Colab (`colab.ipynb`, T4 runtime, Run all):
     python src/evaluate.py --mode zeroshot
     python src/evaluate.py --mode fewshot
     python src/evaluate.py --mode lora
-    pytest
+    pytest                  # 9 tests, CPU only, no model download
+
+## Failure handling
+| situation | behavior |
+|---|---|
+| model output is not exactly one valid label (extra words, a made-up label, empty text) | `to_label` returns `None`; scored as wrong and counted against the valid-label rate, with no fuzzy credit |
+| prediction differs from the canonical label only by case or surrounding quotes, backticks, spaces | matched to the canonical label (one Banking77 label starts with a capital letter) |
+| label with no support in the sample | contributes an F1 of 0 to macro-F1 rather than being skipped |
+| no CUDA GPU | `evaluate.py` exits with a message pointing to Colab instead of crashing inside PyTorch |
+| `--mode lora` without a trained adapter | `evaluate.py` exits with a message to run `src/train.py` first |
+| tokenized example longer than 160 tokens | truncated in training (`encode`); Banking77 messages are short, so this is a guard, not a measured case |
+
+Not handled: no checkpointing or resume in `train.py`, and no out-of-memory fallback (batch size is a flag).
 
 ## Limits and honesty notes
 - One training run, one seed, one training size. Treat differences of about one point as noise; the LoRA-versus-prompting
@@ -47,4 +59,6 @@ Locally (needs a CUDA GPU) or in Colab (`colab.ipynb`, T4 runtime, Run all):
   too old for current `peft` (the notebook now uninstalls it), and my scorer lowercased predictions, so one Banking77 label
   spelled with a capital letter (`Refund_not_showing_up`) could never match. An earlier run before that fix scored
   slightly lower on all three models; the table above is from a full re-run after the fix.
+- The raw `results/eval_*.json` files from the Colab run were not saved into this repo, so the table above is
+  reproducible by re-running the notebook but cannot be checked against stored output here.
 - The model is not published to the Hugging Face Hub; the adapter is not in this repo.

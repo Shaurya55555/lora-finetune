@@ -56,3 +56,13 @@ def to_label(pred: str, labels: list[str]) -> str | None:
 def nearest_label(pred: str, labels: list[str]) -> str:
     m = difflib.get_close_matches(pred.strip().lower(), labels, n=1, cutoff=0.0)
     return m[0] if m else labels[0]
+
+
+def macro_f1(gold, pred, labels):
+    f1s = []
+    for l in labels:
+        tp = sum(g == l and p == l for g, p in zip(gold, pred))
+        fp = sum(g != l and p == l for g, p in zip(gold, pred))
+        fn = sum(g == l and p != l for g, p in zip(gold, pred))
+        f1s.append(0.0 if tp == 0 else 2 * tp / (2 * tp + fp + fn))
+    return sum(f1s) / len(f1s)

@@ -41,3 +41,24 @@ def test_stratified_sample_balanced_and_deterministic():
     b = common.stratified_sample(split, 4, seed=1)
     assert a == b
     assert sorted(a["label"]).count(0) == 4 and len(a["label"]) == 12
+
+
+def test_macro_f1_perfect_and_empty_class():
+    labels = ["a", "b", "c"]
+    assert common.macro_f1(["a", "b"], ["a", "b"], labels) == 2 / 3  # class c has no support: F1 0
+    assert common.macro_f1(["a", "b", "c"], ["a", "b", "c"], labels) == 1.0
+
+
+def test_macro_f1_counts_invalid_as_wrong():
+    labels = ["a", "b"]
+    assert common.macro_f1(["a", "b"], ["<invalid>", "b"], labels) == (0.0 + 1.0) / 2
+
+
+def test_macro_f1_partial():
+    # a: tp1 fp1 fn0 -> 2/3 ; b: tp0 fp0 fn1 -> 0
+    assert abs(common.macro_f1(["a", "b"], ["a", "a"], ["a", "b"]) - (2 / 3) / 2) < 1e-9
+
+
+def test_to_label_empty_and_whitespace_output():
+    assert common.to_label("", LABELS) is None
+    assert common.to_label("   \n  ", LABELS) is None
